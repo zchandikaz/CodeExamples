@@ -29,10 +29,10 @@ public class TestStepDefs {
     public void setUp(Scenario scenario) throws Exception {
         if(System.getProperty(SYS_PROP_CHROME_DRIVER)==null){
             var osName = System.getProperty(SYS_PROP_OS_NAME);
-            if (osName.contains("win")) {
+            if (osName.toLowerCase().contains("win")) {
                 System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-win.exe");
-            } else if (osName.contains("mac")) {
-                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-max");
+            } else if (osName.toLowerCase().contains("mac")) {
+                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-mac");
             } else {
                 System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-nix");
             }
