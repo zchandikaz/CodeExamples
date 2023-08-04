@@ -19,13 +19,24 @@ import org.testng.Assert;
 import java.time.Duration;
 
 public class TestStepDefs {
+    private static final String SYS_PROP_CHROME_DRIVER = "webdriver.chrome.driver";
+    private static final String SYS_PROP_OS_NAME = "os.name";
     private WebDriver driver;
     private DevToolUtility devToolUtility;
     private boolean profilingEnabled;
 
     @Before
     public void setUp(Scenario scenario) throws Exception {
-        System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90");
+        if(System.getProperty(SYS_PROP_CHROME_DRIVER)==null){
+            var osName = System.getProperty(SYS_PROP_OS_NAME);
+            if (osName.contains("win")) {
+                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-win.exe");
+            } else if (osName.contains("mac")) {
+                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-max");
+            } else {
+                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-nix");
+            }
+        }
 
         Thread.sleep(1000);
 

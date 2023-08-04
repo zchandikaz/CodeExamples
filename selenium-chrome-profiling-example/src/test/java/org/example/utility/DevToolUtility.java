@@ -248,7 +248,10 @@ public class DevToolUtility {
             try {
                 var objMapper = new ObjectMapper();
                 Files.writeString(
-                        Paths.get("target", "/Trace - " + profileName + ".json"),
+                        Paths.get(
+                                "target",
+                                "Trace - " + profileName + ".json"
+                        ),
                         objMapper.writeValueAsString(maps)
                 );
                 traceSemaphore.release();
@@ -263,13 +266,13 @@ public class DevToolUtility {
                     tracingComplete.getStream().orElseThrow(),
                     50 * 1024 * 1024
             );
-            try (
-                    FileOutputStream fos = new FileOutputStream(
-                            Paths.get(
+            var reportFile = Paths.get(
                                     "target",
-                                    "/Trace - " + profileName + ".json"
-                            ).toFile()
-                    )
+                                    "Trace - " + profileName + ".json"
+                            ).toFile();
+            LOGGER.log(Level.INFO, "Profile path: {0}", new Object[]{ reportFile.getName() });
+            try (
+                    FileOutputStream fos = new FileOutputStream(reportFile)
             ) {
                 while (readable.hasNext()) {
                     fos.write(readable.next().get());
