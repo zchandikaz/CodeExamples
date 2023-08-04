@@ -9,9 +9,6 @@ Feature: Chrome Profiling Test
     And Click picture 1
     And Wait 1 seconds
     And Click picture 2
-    And Wait 1 seconds
-    And Click picture 3
-    And Wait 1 seconds
-    And Wait 5 seconds
+    And Wait 6 seconds
 
 

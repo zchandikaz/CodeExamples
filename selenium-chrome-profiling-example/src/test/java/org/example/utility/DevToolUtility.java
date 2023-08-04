@@ -11,7 +11,7 @@ import org.openqa.selenium.devtools.v114.tracing.model.TraceConfig;
 
 import java.io.FileOutputStream;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
@@ -31,6 +31,7 @@ public class DevToolUtility {
     private final DevTools devTools;
     private final Semaphore traceSemaphore = new Semaphore(1);
     private boolean traceCompleted = false;
+
     public static class TraceStartCommandFactory {
         private static final Logger LOGGER = Logger.getLogger(TraceStartCommandFactory.class.getName());
 
@@ -177,7 +178,7 @@ public class DevToolUtility {
             NOT_STARTED, IN_PROGRESS, COMPLETED
         }
 
-        private static class ResponseChunk{
+        private static class ResponseChunk {
             private final byte[] data;
 
             public ResponseChunk(byte[] data) {
@@ -204,12 +205,21 @@ public class DevToolUtility {
                 status = Status.IN_PROGRESS;
             }
 
-            var response = client.send(IO.read(stream, Optional.empty(), Optional.of(size)));
+            var response = client.send(
+                    IO.read(
+                            stream,
+                            Optional.empty(), Optional.of(size)
+                    )
+            );
             if (response.getEof()) {
                 this.status = Status.COMPLETED;
                 client.send(IO.close(stream));
             }
-            return response.getBase64Encoded().orElse(false) ? Base64.getDecoder().decode(response.getData()) : response.getData().getBytes();
+            return response.getBase64Encoded().orElse(false)
+                    ?
+                    Base64.getDecoder().decode(response.getData())
+                    :
+                    response.getData().getBytes();
         }
 
         @Override
@@ -236,10 +246,9 @@ public class DevToolUtility {
 
         devTools.addListener(Tracing.dataCollected(), maps -> {
             try {
-                Runtime.getRuntime().exec("mkdir -p reports/profiles").waitFor();
                 var objMapper = new ObjectMapper();
                 Files.writeString(
-                        Path.of("reports/profiles/Trace - " + profileName + ".json"),
+                        Paths.get("target", "/Trace - " + profileName + ".json"),
                         objMapper.writeValueAsString(maps)
                 );
                 traceSemaphore.release();
@@ -249,15 +258,20 @@ public class DevToolUtility {
         });
 
         devTools.addListener(Tracing.tracingComplete(), tracingComplete -> {
-            var readable = new ChromeDevToolIOReader(devTools, tracingComplete.getStream().orElseThrow(), 8 * 1024 * 1024);
-            try {
-                Runtime.getRuntime().exec("mkdir -p reports/profiles").waitFor();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-
-            try (FileOutputStream fos = new FileOutputStream("reports/profiles/Trace - " + profileName + ".json")) {
-                while (readable.hasNext()){
+            var readable = new ChromeDevToolIOReader(
+                    devTools,
+                    tracingComplete.getStream().orElseThrow(),
+                    50 * 1024 * 1024
+            );
+            try (
+                    FileOutputStream fos = new FileOutputStream(
+                            Paths.get(
+                                    "target",
+                                    "/Trace - " + profileName + ".json"
+                            ).toFile()
+                    )
+            ) {
+                while (readable.hasNext()) {
                     fos.write(readable.next().get());
                 }
                 traceCompleted = true;
@@ -270,13 +284,17 @@ public class DevToolUtility {
     }
 
     public void stopTracing() throws Exception {
-        devTools.send(Tracing.end());
-        var startTime = System.currentTimeMillis();
-        if(traceSemaphore.tryAcquire(15, TimeUnit.MINUTES)){
-            var duration = (System.currentTimeMillis() - startTime) / 1000;
-            LOGGER.log(Level.INFO, "Trace profile saved | Duration: {0}s | Completed: {1} ", new Object[]{duration, traceCompleted});
-        }else {
-            LOGGER.log(Level.SEVERE, "Trace profile not saved within given time");
+        try {
+            devTools.send(Tracing.end());
+            var startTime = System.currentTimeMillis();
+            if (traceSemaphore.tryAcquire(15, TimeUnit.MINUTES)) {
+                var duration = (System.currentTimeMillis() - startTime) / 1000;
+                LOGGER.log(Level.INFO, "Trace profile saved | Duration: {0}s | Completed: {1} ", new Object[]{duration, traceCompleted});
+            } else {
+                LOGGER.log(Level.SEVERE, "Trace profile not saved within given time");
+            }
+        } finally {
+            devTools.close();
         }
     }
 }
