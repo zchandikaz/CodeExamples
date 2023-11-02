@@ -15,6 +15,7 @@ import org.openqa.selenium.chrome.ChromeOptions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
+import io.github.bonigarcia.wdm.WebDriverManager;
 
 import java.time.Duration;
 
@@ -27,16 +28,7 @@ public class TestStepDefs {
 
     @Before
     public void setUp(Scenario scenario) throws Exception {
-        if(System.getProperty(SYS_PROP_CHROME_DRIVER)==null){
-            var osName = System.getProperty(SYS_PROP_OS_NAME);
-            if (osName.toLowerCase().contains("win")) {
-                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-win.exe");
-            } else if (osName.toLowerCase().contains("mac")) {
-                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-mac");
-            } else {
-                System.setProperty("webdriver.chrome.driver", "resources/chromedriver-114.0.5735.90-nix");
-            }
-        }
+        WebDriverManager.chromedriver().setup();
 
         Thread.sleep(1000);
 
